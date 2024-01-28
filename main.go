@@ -18,7 +18,7 @@ import (
 	"github.com/nxadm/tail"
 )
 
-var podURL string = "192.168.1.222:8080"
+var podURL string = "192.168.1.4:8080"
 var lightsOnEndpoint string = "http://192.168.1.75:8080/lights_on"
 var lightsOffEndpoint string = "http://192.168.1.75:8080/lights_off"
 
@@ -39,7 +39,7 @@ func LightsOff() {
 	time.Sleep(time.Second / 2)
 	Behavior("Wait")
 	time.Sleep(time.Second / 3)
-	PlayAnim("func=PlayAnimation&args=lights_off")
+	PlayAnim("lights_off")
 	go func() {
 		time.Sleep(time.Second / 3)
 		AudioEvent("Play__Robot_Vic_Sfx__Head_Down_Short_Curious")
@@ -61,7 +61,7 @@ func LightsOn() {
 	time.Sleep(time.Second / 2)
 	Behavior("Wait")
 	time.Sleep(time.Second / 3)
-	PlayAnim("func=PlayAnimation&args=lights_on")
+	PlayAnim("lights_on")
 	go func() {
 		time.Sleep(time.Second / 3)
 		AudioEvent("Play__Robot_Vic_Sfx__Head_Down_Short_Curious")
@@ -165,7 +165,7 @@ func AudioEvent(event string) {
 }
 
 func PlayAnim(anim string) {
-	POSTreq("http://localhost:8889/consolefunccall", "func=PlayAnimation&args=lights_on")
+	POSTreq("http://localhost:8889/consolefunccall", "func=PlayAnimation&args="+anim)
 }
 
 func GetESN() string {
@@ -175,7 +175,13 @@ func GetESN() string {
 
 func InitVector() {
 	var err error
+	var i int
 	for {
+		i = i + 1
+		if i == 6 {
+			fmt.Println("Vector SDK conn didn't work after 5 tries, exiting")
+			os.Exit(1)
+		}
 		victor, err = NewWpExternal(podURL, GetESN())
 		if err != nil {
 			fmt.Println(err)
