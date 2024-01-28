@@ -17,6 +17,7 @@ if [[ ! $2 == "jc" ]]; then
 	scp -O resources/vic-custom.service root@$1:/lib/systemd/system/
 	scp -O resources/vic-cloud.service root@$1:/lib/systemd/system/
 	scp -O resources/cloud-verbose root@$1:/anki/bin/
+        ssh root@$1 "chmod +rwx /anki/bin/cloud-verbose /anki/bin/vic-custom"
 	ssh root@$1 "systemctl daemon-reload"
 	ssh root@$1 "systemctl enable vic-custom"
 	ssh root@$1 "systemctl start anki-robot.target"
