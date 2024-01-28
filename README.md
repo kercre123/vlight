@@ -16,12 +16,15 @@ Only works on unlocked robots.
 
 A gist is coming soon.
 
+You will need to install Docker.
+
 To install onto your unlocked Vector:
 
 
 ```
 git clone https://github.com/kercre123/vlight
 cd vlight
+sudo make docker-builder
 ssh-add <path/to/ssh_key>
 ./send.sh <bot_ip_address>
 ```
