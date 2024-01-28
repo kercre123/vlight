@@ -1,0 +1,16 @@
+[Unit]
+Description=Victor cloud services daemon
+SourcePath=/anki/bin/vic-custom
+PartOf=anki-robot.target
+
+Wants=vic-cloud.service
+After=vic-cloud.service
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sleep 3
+ExecStart=/anki/bin/vic-custom
+Restart=no
+
+[Install]
+WantedBy=anki-robot.target

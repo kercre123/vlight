@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# vic-cloud isn't run as verbose by default
+
+cd /anki/bin
+/anki/bin/vic-cloud -verbose
