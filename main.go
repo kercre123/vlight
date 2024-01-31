@@ -18,7 +18,7 @@ import (
 	"github.com/nxadm/tail"
 )
 
-var podURL string = "192.168.1.4:8080"
+var podURL string = "192.168.1.222:8080"
 var lightsOnEndpoint string = "http://192.168.1.75:8080/lights_on"
 var lightsOffEndpoint string = "http://192.168.1.75:8080/lights_off"
 
