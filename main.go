@@ -18,7 +18,8 @@ import (
 	"github.com/nxadm/tail"
 )
 
-var podURL string = "192.168.1.222:8080"
+var WebserverPort string = ":8080"
+
 var lightsOnEndpoint string = "http://192.168.1.75:8080/lights_on"
 var lightsOffEndpoint string = "http://192.168.1.75:8080/lights_off"
 
@@ -36,47 +37,31 @@ var lightOffWords []string = []string{
 }
 
 func LightsOff() {
-	time.Sleep(time.Second / 2)
-	Behavior("Wait")
-	time.Sleep(time.Second / 3)
+	StopBehaving()
 	PlayAnim("lights_off")
-	go func() {
-		time.Sleep(time.Second / 3)
-		AudioEvent("Play__Robot_Vic_Sfx__Head_Down_Short_Curious")
-		time.Sleep(time.Millisecond * 1200)
-		PlayAudioOnVictor("/data/light.pcm", false)
-		time.Sleep(time.Millisecond * 1300)
-		AudioEvent("Play__Robot_Vic_Sfx__Lift_High_Down_Short_Curious")
-	}()
-	time.Sleep(time.Millisecond * 1600)
+	wait(1400)
+	PlayCustomSound("/data/light.pcm")
+	wait(300)
 
 	// make lightsoff post request
 	POSTreq(lightsOffEndpoint, "")
 
-	time.Sleep(time.Millisecond * 2100)
-	Behavior("InitNormalOperation")
+	wait(2100)
+	StartBehaving()
 }
 
 func LightsOn() {
-	time.Sleep(time.Second / 2)
-	Behavior("Wait")
-	time.Sleep(time.Second / 3)
+	StopBehaving()
 	PlayAnim("lights_on")
-	go func() {
-		time.Sleep(time.Second / 3)
-		AudioEvent("Play__Robot_Vic_Sfx__Head_Down_Short_Curious")
-		time.Sleep(time.Millisecond * 1200)
-		PlayAudioOnVictor("/data/light.pcm", false)
-		time.Sleep(time.Millisecond * 1300)
-		AudioEvent("Play__Robot_Vic_Sfx__Lift_High_Down_Short_Curious")
-	}()
-	time.Sleep(time.Millisecond * 1600)
+	wait(1400)
+	PlayCustomSound("/data/light.pcm")
+	wait(300)
 
-	// make lightson post request
+	// make lightsoff post request
 	POSTreq(lightsOnEndpoint, "")
 
-	time.Sleep(time.Millisecond * 2100)
-	Behavior("InitNormalOperation")
+	wait(2100)
+	StartBehaving()
 }
 
 func DoAction(queryText string) {
@@ -89,8 +74,20 @@ func DoAction(queryText string) {
 	}
 }
 
+var podURL string
+
+type ServerConf struct {
+	Jdocs    string `json:"jdocs"`
+	Tms      string `json:"tms"`
+	Chipper  string `json:"chipper"`
+	Check    string `json:"check"`
+	Logfiles string `json:"logfiles"`
+	Appkey   string `json:"appkey"`
+}
+
 var implWords []string
 var skipLines bool
+var noInit bool
 
 var victor *vector.Vector
 
@@ -104,8 +101,6 @@ func main() {
 
 	// Init SDK (requires wire-pod availability)
 	InitVector()
-	// Communicate locally
-	victor.Cfg.Target = "127.0.0.1:443"
 
 	// Create list of command words
 	for _, command := range implCommands {
@@ -131,8 +126,22 @@ func main() {
 						fmt.Println(queryText)
 						// actually do the action
 						go DoAction(queryText)
+						continue
 					}
 				}
+			}
+			if strings.Contains(line.Text, "Sending rpc response PullJdocs") && !noInit {
+				time.Sleep(time.Second * 2)
+				if !noInit {
+					noInit = true
+					InitVector()
+				}
+				continue
+			}
+			if strings.Contains(line.Text, "onboarding_mark_complete_and_exit") {
+				time.Sleep(time.Second)
+				InitVector()
+				continue
 			}
 		}
 		time.Sleep(time.Second / 2)
@@ -148,6 +157,10 @@ func contains(substring string, stringsList []string) bool {
 	return false
 }
 
+func wait(ms int) {
+	time.Sleep(time.Millisecond * time.Duration(ms))
+}
+
 func skipLinesFalse() {
 	skipLines = false
 }
@@ -161,11 +174,11 @@ func POSTreq(URL string, content string) {
 }
 
 func AudioEvent(event string) {
-	POSTreq("http://localhost:8889/consolefunccall", "func=PostAudioEvent&args="+event)
+	go POSTreq("http://localhost:8889/consolefunccall", "func=PostAudioEvent&args="+event)
 }
 
 func PlayAnim(anim string) {
-	POSTreq("http://localhost:8889/consolefunccall", "func=PlayAnimation&args="+anim)
+	go POSTreq("http://localhost:8889/consolefunccall", "func=PlayAnimation&args="+anim)
 }
 
 func GetESN() string {
@@ -173,14 +186,29 @@ func GetESN() string {
 	return string(out)
 }
 
+func StopBehaving() {
+	time.Sleep(time.Second / 2)
+	Behavior("Wait")
+	time.Sleep(time.Second / 3)
+}
+
+func StartBehaving() {
+	Behavior("ModeSelector")
+}
+
 func InitVector() {
 	var err error
 	var i int
+	var serverConf ServerConf
+	jsonBytes, _ := os.ReadFile("/anki/data/assets/cozmo_resources/config/server_config.json")
+	json.Unmarshal(jsonBytes, &serverConf)
+	podURL = strings.Split(serverConf.Chipper, ":")[0] + WebserverPort
+	fmt.Println("POD URL: " + podURL)
 	for {
 		i = i + 1
 		if i == 6 {
-			fmt.Println("Vector SDK conn didn't work after 5 tries, exiting")
-			os.Exit(1)
+			fmt.Println("Vector SDK conn didn't work after 5 tries, stopping")
+			return
 		}
 		victor, err = NewWpExternal(podURL, GetESN())
 		if err != nil {
@@ -188,6 +216,8 @@ func InitVector() {
 			time.Sleep(time.Second)
 			continue
 		} else {
+			victor.Cfg.Target = "127.0.0.1:443"
+			noInit = true
 			return
 		}
 	}

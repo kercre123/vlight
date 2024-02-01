@@ -128,48 +128,58 @@ func NewWpExternal(podURL, serial string) (*vector.Vector, error) {
 		return nil, err
 	}
 
-	return vector.New(
+	vect, _ := vector.New(
 		vector.WithSerialNo(cfg.SerialNo),
 		vector.WithTarget(cfg.Target),
 		vector.WithToken(cfg.Token),
 	)
+
+	_, err = vect.Conn.BatteryState(
+		context.Background(),
+		&vectorpb.BatteryStateRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return vect, nil
 }
 
-func PlayAudioOnVictor(file string, doWait bool) {
-	pcmFile, _ := os.ReadFile(file)
-	client, _ := victor.Conn.ExternalAudioStreamPlayback(
-		context.Background(),
-	)
-	client.SendMsg(&vectorpb.ExternalAudioStreamRequest{
-		AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamPrepare{
-			AudioStreamPrepare: &vectorpb.ExternalAudioStreamPrepare{
-				AudioFrameRate: 16000,
-				AudioVolume:    70,
-			},
-		},
-	})
-	var audioChunks [][]byte
-	for len(pcmFile) >= 1024 {
-		audioChunks = append(audioChunks, pcmFile[:1024])
-		pcmFile = pcmFile[1024:]
-	}
-	for _, chunk := range audioChunks {
+func PlayCustomSound(file string) {
+	go func() {
+		pcmFile, _ := os.ReadFile(file)
+		client, _ := victor.Conn.ExternalAudioStreamPlayback(
+			context.Background(),
+		)
 		client.SendMsg(&vectorpb.ExternalAudioStreamRequest{
-			AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamChunk{
-				AudioStreamChunk: &vectorpb.ExternalAudioStreamChunk{
-					AudioChunkSizeBytes: 1024,
-					AudioChunkSamples:   chunk,
+			AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamPrepare{
+				AudioStreamPrepare: &vectorpb.ExternalAudioStreamPrepare{
+					AudioFrameRate: 16000,
+					AudioVolume:    70,
 				},
 			},
 		})
-		if doWait {
-			time.Sleep(time.Millisecond * 10)
+		var audioChunks [][]byte
+		for len(pcmFile) >= 1024 {
+			audioChunks = append(audioChunks, pcmFile[:1024])
+			pcmFile = pcmFile[1024:]
 		}
-	}
-	fmt.Println("done sending audio")
-	client.SendMsg(&vectorpb.ExternalAudioStreamRequest{
-		AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamComplete{
-			AudioStreamComplete: &vectorpb.ExternalAudioStreamComplete{},
-		},
-	})
+		for _, chunk := range audioChunks {
+			client.SendMsg(&vectorpb.ExternalAudioStreamRequest{
+				AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamChunk{
+					AudioStreamChunk: &vectorpb.ExternalAudioStreamChunk{
+						AudioChunkSizeBytes: 1024,
+						AudioChunkSamples:   chunk,
+					},
+				},
+			})
+			time.Sleep(time.Millisecond * 30)
+		}
+		fmt.Println("done sending audio")
+		client.SendMsg(&vectorpb.ExternalAudioStreamRequest{
+			AudioRequestType: &vectorpb.ExternalAudioStreamRequest_AudioStreamComplete{
+				AudioStreamComplete: &vectorpb.ExternalAudioStreamComplete{},
+			},
+		})
+	}()
 }

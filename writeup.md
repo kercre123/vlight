@@ -38,7 +38,7 @@ Vector: shows animation, lights turn on in sync with the animation
     -   Follow the instructions in the repo. When you get to the step where you copy the Maya.env file, make sure the destination directory matches with the version of Maya you got.
     -   Here is a description of the VictorAnim shelf items: [https://github.com/kercre123/vector-animations-raw/blob/main/documentation/VictorAnim%20Shelf%20in%20Maya.md](https://github.com/kercre123/vector-animations-raw/blob/main/documentation/VictorAnim%20Shelf%20in%20Maya.md)
 
-2. We cannot implement new noises into Vector and we cannot put sounds into new animations. This is due to proprietary code which could not be released to the public and the lack of full engine source code. I got around this by taking advantage of Vector's APIs. Dev robots host a webserver for debugging. This gives us lots of control. We can directly set behaviors, play sound events, play animations, etc all via POST requests/websocket messages. In the final program I created, the webserver is used to play audio events which already exist but couldn't be implemented directly into the animation. As for the "thock" sound, I just used an AudioStream via the SDK.
+2. We cannot implement new noises into Vector. This is due to the lack of full engine source code. I got around by using an AudioStream via the SDK.
 
 3. We can't add an intent via normal methods due to lack of access to the engine source code. I got around this by creating a custom program which runs on the bot and looks at the log for responses from the cloud, then takes control of the bot when it sees a certain phrase.
 
@@ -96,7 +96,7 @@ git clone https://github.com/kercre123/vlight.git
 cd vlight
 ```
 
-7. Open main.go in a text editor. Replace the URLs near the top of the file, most importantly the podURL (should correspond to the IP address of your wire-pod instance). You'll have to modify the Go code to get it to communicate with your smarthome solution.
+7. You'll have to modify main.go to get it to communicate with your smarthome solution. The default values are fine if you are just checking it out and don't want it to communicate with lights for now.
 
 8. Run:
 

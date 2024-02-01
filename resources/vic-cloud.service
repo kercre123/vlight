@@ -12,7 +12,6 @@ ConditionFileIsExecutable=/anki/bin/vic-cloud
 [Service]
 EnvironmentFile=/anki/etc/vic-cloud.env
 ExecStart=/usr/bin/logwrapper /anki/bin/cloud-verbose $VIC_CLOUD_OPTS
-ExecStopPost=/anki/bin/vic-on-exit
 Restart=no
 User=cloud
 Group=anki

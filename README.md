@@ -7,7 +7,6 @@ This includes animations, a sound, and a fully functional implementation.
 You'll have to change the following in main.go:
 
 ```
-var podURL string = "192.168.1.222:8080"
 var lightsOnEndpoint string = "http://192.168.1.75:8080/lights_on"
 var lightsOffEndpoint string = "http://192.168.1.75:8080/lights_off"
 ```
