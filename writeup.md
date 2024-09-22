@@ -21,7 +21,7 @@ Vector: shows animation, lights turn on in sync with the animation
 
 ## Demo
 
-![Demo Video](https://github.com/kercre123/vlight/raw/refs/heads/main/images/vlightexample.mp4)
+https://github.com/user-attachments/assets/aa29001e-c12d-4efc-9677-8d5d77324213
 
 ## Challenges/how
 
